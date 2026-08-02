@@ -1,0 +1,36 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "agent-reach"
+version = "0.1.0"
+description = "Give an agent the channels it needs, and only those. Install per channel, one output shape, with caching and a token budget."
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.11"
+authors = [{ name = "Jean Galea" }]
+keywords = ["agent", "cli", "rss", "youtube", "scraping", "llm"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Environment :: Console",
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: MIT License",
+]
+dependencies = ["feedparser>=6.0.11"]
+
+[project.urls]
+Homepage = "https://github.com/jgalea/agent-reach"
+Issues = "https://github.com/jgalea/agent-reach/issues"
+
+[project.scripts]
+agent-reach = "agent_reach.cli:main"
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/agent_reach"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

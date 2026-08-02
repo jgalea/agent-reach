@@ -1,0 +1,19 @@
+name = "youtube"
+description = "Video metadata and transcripts, via yt-dlp."
+auth = "none"
+cache_ttl = 86400
+
+[backend]
+type = "builtin"
+module = "youtube"
+requires = "yt-dlp"
+
+[backend.install]
+verb = "uv"
+package = "yt-dlp"
+
+[[command]]
+name = "transcript"
+
+[[command]]
+name = "info"

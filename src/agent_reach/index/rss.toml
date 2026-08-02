@@ -1,0 +1,11 @@
+name = "rss"
+description = "Read any RSS or Atom feed as clean text."
+auth = "none"
+cache_ttl = 900
+
+[backend]
+type = "builtin"
+module = "rss"
+
+[[command]]
+name = "feed"
