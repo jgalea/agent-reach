@@ -21,22 +21,35 @@ def isolated_home(tmp_path, monkeypatch):
 
 def test_index_parses():
     channels = manifest.available()
-    assert {"rss", "youtube", "wporg"} <= set(channels)
+    assert {"rss", "youtube"} <= set(channels)
     for entry in channels.values():
         assert entry.description
         assert entry.commands
 
 
-def test_wporg_manifest_maps_fields():
-    entry = manifest.get("wporg")
-    reviews = entry.command("reviews")
-    assert reviews.args == ["reviews", "{query}", "--json"]
-    assert reviews.mapping["title"] == "title"
-    assert reviews.mapping["engagement"]["stars"] == "rating"
+def test_a_tap_adds_channels(tmp_path, monkeypatch):
+    monkeypatch.setenv("AGENT_REACH_HOME", str(tmp_path))
+    tap = tmp_path / "taps" / "mine"
+    tap.mkdir(parents=True)
+    (tap / "demo.toml").write_text(
+        '\n'.join(
+            [
+                'name = "demo"',
+                'description = "from a tap"',
+                '[backend]',
+                'type = "cli"',
+                'binary = "demo"',
+                '[[command]]',
+                'name = "read"',
+                'args = ["read", "{query}"]',
+            ]
+        )
+    )
+    assert "demo" in manifest.available()
 
 
 def test_unknown_command_is_reported():
-    entry = manifest.get("wporg")
+    entry = manifest.get("rss")
     with pytest.raises(manifest.ManifestError) as exc:
         entry.command("nope")
     assert "has no command" in str(exc.value)
@@ -71,11 +84,21 @@ def test_install_rejects_shell_metacharacters():
 
 
 def test_install_command_is_argv_not_a_string():
-    entry = manifest.get("wporg")
+    entry = manifest.parse(
+        {
+            "name": "demo",
+            "description": "x",
+            "backend": {
+                "type": "cli",
+                "binary": "demo",
+                "install": {"verb": "go", "package": "github.com/you/demo/cmd/demo@latest"},
+            },
+        }
+    )
     assert entry.install_command() == [
         "go",
         "install",
-        "github.com/jgalea/wporg/cmd/wporg@latest",
+        "github.com/you/demo/cmd/demo@latest",
     ]
 
 

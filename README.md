@@ -62,36 +62,48 @@ DOWN wporg        auth:none    'wporg' not on PATH
 |---|---|---|
 | `rss` | feedparser | none |
 | `youtube` | yt-dlp | none |
-| `wporg` | [wporg](https://github.com/jgalea/wporg) | none |
+
+The index stays small on purpose. Channels you add yourself live in a tap, described below.
 
 ## Writing a channel
 
 A channel over an existing CLI that emits JSON is a manifest and nothing else:
 
 ```toml
-name = "wporg"
-description = "WordPress.org plugin reviews, support threads and directory stats."
+name = "reviews-cli"
+description = "Product reviews from a CLI that already speaks JSON."
 auth = "none"
 cache_ttl = 1800
 
 [backend]
 type = "cli"
-binary = "wporg"
+binary = "reviews-cli"
 
 [backend.install]
 verb = "go"
-package = "github.com/jgalea/wporg/cmd/wporg@latest"
+package = "github.com/you/reviews-cli/cmd/reviews-cli@latest"
+
+[backend.probe]
+args = ["--help"]
 
 [[command]]
-name = "reviews"
+name = "recent"
 args = ["reviews", "{query}", "--json"]
 
 [command.map]
 items = "$"
 title = "title"
 url = "url"
-text = "content"
+author = "author"
+text = "text"
+published_at = "created_at"
+
+[command.map.engagement]
+stars = "rating"
 ```
+
+Declare `[command.params]` to map a flag through (`limit = "--limit"`). Anything undeclared is never
+forwarded to the binary, so a channel cannot be talked into passing arbitrary flags.
 
 Drop it in `~/.agent-reach/taps/<name>/` and it shows up in `agent-reach list --all`. A tap is any directory
 of manifests, so private channels stay private.
