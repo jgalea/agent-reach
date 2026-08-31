@@ -208,6 +208,47 @@ def test_rss_reads_a_local_feed():
     assert "escaped" in envelope.items[1].text
 
 
+def _fake_feed(**fields):
+    class FakeParsed(dict):
+        __getattr__ = dict.get
+
+    return FakeParsed({"bozo": False, "bozo_exception": None, "entries": [], **fields})
+
+
+def test_rss_raises_on_an_http_error_instead_of_returning_nothing(monkeypatch):
+    import feedparser
+
+    entry = manifest.get("rss")
+    for status, expected in [(429, "429"), (404, "404"), (403, "403"), (500, "500")]:
+        monkeypatch.setattr(feedparser, "parse", lambda url, s=status: _fake_feed(status=s))
+        with pytest.raises(RuntimeError, match=expected):
+            runner.run(entry, "feed", "https://example.com/feed.xml", use_cache=False)
+
+
+def test_rss_does_not_cache_a_blocked_response(monkeypatch):
+    import feedparser
+
+    entry = manifest.get("rss")
+    url = "https://example.com/feed.xml"
+    monkeypatch.setattr(feedparser, "parse", lambda _url: _fake_feed(status=429))
+    with pytest.raises(RuntimeError):
+        runner.run(entry, "feed", url)
+    assert cache.get(entry.name, "feed", url, {}, entry.cache_ttl) is None
+
+
+def test_rss_still_reads_a_feed_with_no_http_status(monkeypatch):
+    # feedparser sets no status key for a local path or raw bytes, so the guard
+    # must not mistake a missing status for a failure.
+    import feedparser
+
+    entry = manifest.get("rss")
+    monkeypatch.setattr(
+        feedparser, "parse", lambda _url: _fake_feed(entries=[{"title": "Local", "link": "", "summary": "hi"}])
+    )
+    envelope = runner.run(entry, "feed", "whatever", use_cache=False)
+    assert [i.title for i in envelope.items] == ["Local"]
+
+
 def test_vtt_parsing_drops_timestamps_and_repeats():
     raw = (FIXTURES / "sample.vtt").read_text()
     text = youtube.parse_vtt(raw)
