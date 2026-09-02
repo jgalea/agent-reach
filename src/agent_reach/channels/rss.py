@@ -16,6 +16,7 @@ def fetch(command, query, params):
         raise ValueError("rss needs a feed URL")
     limit = int(params.get("limit", 20))
     parsed = feedparser.parse(query)
+    _check_status(parsed)
     if parsed.bozo and not parsed.entries:
         raise RuntimeError(f"could not read the feed: {parsed.bozo_exception}")
     items = []
@@ -35,6 +36,25 @@ def fetch(command, query, params):
             )
         )
     return items
+
+
+def _check_status(parsed):
+    # feedparser reports an HTTP 429 as bozo=False with no entries, which is
+    # indistinguishable from a feed that is genuinely empty. Raising here also
+    # keeps runner.run from caching the blocked response for the full TTL.
+    status = parsed.get("status")
+    if not isinstance(status, int) or status < 400:
+        return
+    if status == 429:
+        raise RuntimeError(
+            "rate limited (HTTP 429): the host is throttling this IP. Wait a few "
+            "minutes and retry. An empty result here means blocked, not quiet."
+        )
+    if status in (401, 403):
+        raise RuntimeError(f"the feed refused this request (HTTP {status})")
+    if status == 404:
+        raise RuntimeError(f"no feed at that URL (HTTP {status})")
+    raise RuntimeError(f"could not read the feed (HTTP {status})")
 
 
 def _strip_html(text):
