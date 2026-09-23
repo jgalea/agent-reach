@@ -146,6 +146,7 @@ def test_cache_clear_by_channel():
     assert cache.get("b", "c", "q", {}, 60) is not None
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="fake CLI is a POSIX shell script")
 def test_cli_backend_maps_json_to_envelope(tmp_path, monkeypatch):
     fake = tmp_path / "fakecli"
     payload = json.dumps(

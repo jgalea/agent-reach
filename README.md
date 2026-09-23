@@ -21,9 +21,13 @@ Nothing runs in the cloud and nothing is metered.
 
 ## Install
 
+Works on macOS, Linux and Windows with Python 3.11+:
+
 ```bash
 uv tool install agent-reach
 ```
+
+`pipx install agent-reach` works too. Windows support hasn't been tested on a real Windows machine yet; if something breaks, open an issue.
 
 Then install the channels you want:
 
@@ -33,7 +37,8 @@ agent-reach install youtube
 ```
 
 `install` runs a pinned command from a fixed set of verbs (`uv`, `pipx`, `go`, `brew`). Manifests cannot
-supply shell. Use `--dry-run` to see the exact command first.
+supply shell. Use `--dry-run` to see the exact command first. `brew` is only there on macOS and Linux, so a
+channel that installs with it needs its binary installed by hand on Windows.
 
 ## Use
 
@@ -105,7 +110,8 @@ stars = "rating"
 Declare `[command.params]` to map a flag through (`limit = "--limit"`). Anything undeclared is never
 forwarded to the binary, so a channel cannot be talked into passing arbitrary flags.
 
-Drop it in `~/.agent-reach/taps/<name>/` and it shows up in `agent-reach list --all`. A tap is any directory
+Drop it in `~/.agent-reach/taps/<name>/` (`%USERPROFILE%\.agent-reach\taps\<name>\` on Windows, or under
+`AGENT_REACH_HOME` if you set it) and it shows up in `agent-reach list --all`. A tap is any directory
 of manifests, so private channels stay private.
 
 Channels needing a login declare `auth = "cookie"`, and both `install` and `doctor` say so. Those run as your

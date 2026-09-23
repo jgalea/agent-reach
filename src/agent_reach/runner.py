@@ -55,17 +55,19 @@ def _as_items(raw, mapping, source):
 
 
 def _run_cli(manifest, command, query, params):
-    if not shutil.which(manifest.binary):
+    # The resolved path also finds .cmd/.bat shims on Windows.
+    binary = shutil.which(manifest.binary)
+    if not binary:
         raise RunError(
             f"'{manifest.binary}' is not on PATH. Run: agent-reach install {manifest.name}"
         )
-    argv = [manifest.binary]
+    argv = [binary]
     for arg in command.args:
         argv.append(arg.replace("{query}", query))
     for key, flag in command.params.items():
         if key in params:
             argv.extend([flag, str(params[key])])
-    proc = subprocess.run(argv, capture_output=True, text=True)
+    proc = subprocess.run(argv, capture_output=True, text=True, encoding="utf-8", errors="replace")
     if proc.returncode != 0:
         detail = (proc.stderr or proc.stdout).strip().splitlines()
         raise RunError(f"{manifest.binary} exited {proc.returncode}: {detail[-1] if detail else ''}")
@@ -125,7 +127,9 @@ def probe(manifest):
         return False, f"'{binary}' not on PATH"
     args = manifest.backend.get("probe", {}).get("args", ["--version"])
     try:
-        proc = subprocess.run([binary, *args], capture_output=True, text=True, timeout=20)
+        proc = subprocess.run(
+            [path, *args], capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=20
+        )
     except (OSError, subprocess.SubprocessError) as exc:
         return False, str(exc)
     if proc.returncode != 0:

@@ -106,9 +106,10 @@ def cmd_get(args):
 def cmd_skill(args):
     content = skillgen.generate()
     if args.write:
-        args.write.parent.mkdir(parents=True, exist_ok=True)
-        args.write.write_text(content)
-        print(f"wrote {args.write}")
+        target = args.write.expanduser()
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(content, encoding="utf-8")
+        print(f"wrote {target}")
     else:
         print(content, end="")
     return 0
@@ -164,6 +165,10 @@ def build_parser():
 
 
 def main(argv=None):
+    # A Windows console or pipe may not be UTF-8; print what it can rather than crash.
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(errors="replace")
     parser = build_parser()
     args = parser.parse_args(argv)
     return args.func(args)

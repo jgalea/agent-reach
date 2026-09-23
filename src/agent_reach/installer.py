@@ -28,6 +28,6 @@ def plan(manifest):
 
 
 def execute(argv):
-    proc = subprocess.run(argv)
+    proc = subprocess.run([shutil.which(argv[0]) or argv[0], *argv[1:]])
     if proc.returncode != 0:
         raise InstallError(f"{' '.join(argv)} exited {proc.returncode}")

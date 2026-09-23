@@ -15,7 +15,7 @@ def probe():
     path = shutil.which("yt-dlp")
     if not path:
         return False, "'yt-dlp' not on PATH"
-    proc = subprocess.run(["yt-dlp", "--version"], capture_output=True, text=True)
+    proc = subprocess.run([path, "--version"], capture_output=True, text=True, encoding="utf-8", errors="replace")
     if proc.returncode != 0:
         return False, "yt-dlp --version failed"
     return True, f"yt-dlp {proc.stdout.strip()}"
@@ -51,6 +51,8 @@ def _metadata(target):
         ["yt-dlp", "-J", "--no-warnings", "--skip-download", target],
         capture_output=True,
         text=True,
+        encoding="utf-8",
+        errors="replace",
     )
     if proc.returncode != 0:
         detail = (proc.stderr or "").strip().splitlines()
@@ -77,6 +79,8 @@ def _transcript(target, lang):
             ],
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
         )
         files = sorted(Path(workdir).glob("*.vtt"))
         if not files:
